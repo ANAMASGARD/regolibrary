@@ -27,35 +27,47 @@ is_api_server(obj) if {
 	endswith(obj.spec.containers[0].command[0], "kube-apiserver")
 }
 
-# Assume flag set only once
-invalid_flag(container) := invalid_flags[0] if {
-	cmd := get_flags(container)
-	invalid_flags := [flag |
-		some i, c in cmd
-		flag := get_result(container, c, i)
-	]
-}
+invalid_flag(container) := result if {
+	flags := get_flags(container)
+	# A standalone "--" ends pflag parsing. Index zero is the executable.
+	end := min({count(flags)} | {i |
+		some i, arg in flags
+		arg == "--"
+	})
+	arguments := [argument_tokens(arg) | some arg in array.slice(flags, 0, end)]
 
-get_result(container, cmd, i) := result if {
-	cmd == "--service-account-lookup=false"
-	result = {
-		"failed_paths": [flag_path(container, i)],
-		"fix_paths": [],
-	}
-}
+	# Preserve the legacy packed-argument fixture. Order matches first by
+	# argument index and then by token index within that argument.
+	[i, j] := max({[arg_index, token_index] |
+		some arg_index, tokens in arguments
+		arg_index > 0
+		some token_index, token in tokens
+		split(token, "=")[0] == "--service-account-lookup"
+	})
+	tokens := arguments[i]
+	parts := split(tokens[j], "=")
+	count(parts) == 2
+	# These are the false spellings accepted by strconv.ParseBool.
+	parts[1] in {"0", "f", "F", "false", "False", "FALSE"}
 
-get_result(container, cmd, i) := result if {
-	cmd != "--service-account-lookup=false"
-	contains(cmd, "--service-account-lookup=false")
-	path = flag_path(container, i)
-	result = {
+	path := flag_path(container, i)
+	result := {
 		"failed_paths": [path],
-		"fix_paths": [{
-			"path": path,
-			"value": replace(cmd, "--service-account-lookup=false", "--service-account-lookup=true"),
-		}],
+		"fix_paths": packed_fix(tokens, j, path),
 	}
 }
+
+# Only split arguments that look like multiple whitespace-separated long flags.
+argument_tokens(arg) := regex.find_n(`\s+|\S+`, arg, -1) if {
+	regex.match(`^--[^\s]+(\s+--[^\s]+)+$`, arg)
+} else := [arg]
+
+packed_fix(tokens, index, path) := [{"path": path, "value": value}] if {
+	count(tokens) > 1
+	before := concat("", array.slice(tokens, 0, index))
+	after := concat("", array.slice(tokens, index + 1, count(tokens)))
+	value := concat("", [before, "--service-account-lookup=true", after])
+} else := []
 
 # Combine command and args so flags are detected regardless of where the
 # distribution places them. kubeadm puts flags in command; RKE2/k3s keep

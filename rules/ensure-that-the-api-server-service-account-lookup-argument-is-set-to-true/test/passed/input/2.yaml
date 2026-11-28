@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-apiserver-repeated-lookup
+  namespace: kube-system
+spec:
+  containers:
+    - name: kube-apiserver
+      image: registry.k8s.io/kube-apiserver:v1.32.0
+      command:
+        - kube-apiserver
+        - --service-account-lookup=false
+      args:
+        - --service-account-lookup

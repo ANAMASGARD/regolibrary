@@ -10,9 +10,10 @@ spec:
   containers:
     - command:
         - kube-apiserver
+        - --service-account-lookup=true
       args:
         - '--advertise-address=10.0.4.1'
-        - '--service-account-lookup=false'
+        - '--service-account-lookup=0'
         - '--secure-port=6443'
       image: index.docker.io/rancher/hardened-kubernetes:v1.32.11-rke2r1
       name: kube-apiserver

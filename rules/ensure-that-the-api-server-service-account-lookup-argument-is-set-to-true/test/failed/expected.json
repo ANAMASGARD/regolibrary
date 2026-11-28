@@ -10,7 +10,7 @@
         "fixPaths": [
             {
                 "path": "spec.containers[0].command[2]",
-                "value": "--allow-privileged=true --service-account-lookup=true"
+                "value": "--allow-privileged=true --service-account-lookup=true\t--service-account-lookup=true"
             }
         ],
         "ruleStatus": "",

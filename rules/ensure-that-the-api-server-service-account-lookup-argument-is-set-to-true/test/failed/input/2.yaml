@@ -27,7 +27,7 @@ spec:
   - command:
     - kube-apiserver
     - "--advertise-address=192.168.49.2"
-    - "--allow-privileged=true --service-account-lookup=false"
+    - "--allow-privileged=true --service-account-lookup=true\t--service-account-lookup=FALSE"
     - "--authorization-mode=Node,RBAC"
     - "--client-ca-file=/var/lib/minikube/certs/ca.crt"
     - "--enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota"
